@@ -6,7 +6,7 @@ import 'request.dart';
 
 /// !TODO
 // Receiver function to handle requests when the service is advertising.
-typedef ServiceHandler = Future<Map<String, dynamic>>? Function(
+typedef ActionHandler = Future<Map<String, dynamic>>? Function(
     Map<String, dynamic> args);
 
 /// Wrapper to interact with ROS services.
@@ -44,10 +44,10 @@ class Action {
 
     // !TODO
     // Set up the response receiver by filtering data from the ROS node by the ID generated.
-    final callId = ros.requestServiceCaller(name);
+    final actionId = ros.requestActionCaller(name);
 
     // TODO deal with callbacks
-    final receiver = ros.stream.where((message) => message['id'] == callId).map(
+    final receiver = ros.stream.where((message) => message['id'] == actionId).map(
         (Map<String, dynamic> message) => message['result'] == null
             ? Future.error(message['values']!)
             : Future.value(message['values']));
@@ -64,7 +64,7 @@ class Action {
     // Actually send the request.
     ros.send(Request(
       op: 'send_action_goal',
-      id: callId,
+      id: actionId,
       action: name,
       action_type: type,
       args: goal,
@@ -75,7 +75,7 @@ class Action {
 
   // TODO 
   // Advertise the service and provide a [handler] to deal with requests.
-  Future<void> advertise(ServiceHandler handler) async {
+  Future<void> advertise(ActionHandler handler) async {
     if (isAdvertised) return;
     // Send the advertise request.
     ros.send(Request(

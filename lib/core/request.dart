@@ -10,6 +10,8 @@ class Request {
     this.type,
     this.topic,
     this.msg,
+    this.action,
+    this.action_type,
     this.latch,
     this.compression,
     this.throttleRate,
@@ -35,6 +37,10 @@ class Request {
 
   /// Message object (generally JSON).
   dynamic msg;
+
+  String? action;
+
+  String? action_type;
 
   /// Latch the topic when publishing.
   bool? latch;
@@ -70,6 +76,8 @@ class Request {
       type: jsonData['type'],
       topic: jsonData['topic'],
       msg: jsonData['msg'],
+      action: jsonData['action'],
+      action_type: jsonData['action_type'],
       latch: jsonData['latch'],
       compression: jsonData['compression'],
       throttleRate: jsonData['throttle_rate'],
@@ -93,6 +101,8 @@ class Request {
       if (type != null) 'type': type,
       if (topic != null) 'topic': topic,
       if (msg != null) 'msg': msg,
+      if (action != null) 'action': action,
+      if (action_type != null) 'action_type': action_type,
       if (latch != null) 'latch': latch,
       if (compression != null) 'compression': compression,
       if (throttleRate != null) 'throttle_rate': throttleRate,

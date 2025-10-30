@@ -123,7 +123,7 @@ class Ros {
         : (message is Map || message is List)
             ? json.encode(message)
             : message;
-    //print('OUTGOING: $toSend');
+    print('OUTGOING: $toSend');
     // Actually send it to the node.
     _channel.sink.add(toSend);
     return true;
@@ -183,6 +183,13 @@ class Ros {
     serviceCallers++;
     return 'call_service:' + name + ':' + ids.toString();
   }
+
+  /// Request a action caller ID.
+  String requestActionCaller(String name) {
+    serviceCallers++;
+    return 'send_action_goal:' + name + ':' + ids.toString();
+  }
+
   @override
   bool operator ==(other) {
     return other.hashCode == hashCode;
