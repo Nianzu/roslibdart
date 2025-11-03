@@ -37,10 +37,10 @@ class Action {
   StreamSubscription? listener;
 
   /// Call the service with a request ([req]).
-  Future sendGoal(dynamic goal) {
+  String sendGoal(dynamic goal) {
 
     // The action can't be called if it's currently advertising.
-    if (isAdvertised) return Future.value(false);
+    if (isAdvertised) return "";
 
     // !TODO
     // Set up the response receiver by filtering data from the ROS node by the ID generated.
@@ -52,11 +52,11 @@ class Action {
             ? Future.error(message['values']!)
             : Future.value(message['values']));
     // Wait for the receiver to receive a single response and then return.
-    final completer = Completer();
+    final completer = Completer<String>();
 
     // TODO 
     listener = receiver.listen((d) {
-      completer.complete(d);
+      completer.complete(actionId);
       listener!.cancel();
     });
 
@@ -70,7 +70,15 @@ class Action {
       args: goal,
     ));
     
-    return completer.future;
+    return actionId;
+  }
+  void cancelGoal(String actionId) {
+
+    ros.send(Request(
+      op: 'cancel_action_goal',
+      id: actionId,
+      action: name,
+    ));
   }
 
   // TODO 
