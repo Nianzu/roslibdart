@@ -8,7 +8,7 @@ import 'request.dart';
 // Receiver function to handle requests when the service is advertising.
 typedef ActionHandler = Future<Map<String, dynamic>>? Function(
     Map<String, dynamic> args);
-
+  
 /// Wrapper to interact with ROS services.
 class Action {
   Action({
@@ -36,27 +36,29 @@ class Action {
 
   StreamSubscription? listener;
 
+
   /// Call the service with a request ([req]).
-  String sendGoal(dynamic goal) {
+  (String, Future<bool>?) sendGoal(dynamic goal) {
 
     // The action can't be called if it's currently advertising.
-    if (isAdvertised) return "";
+    if (isAdvertised) return ("",null);
 
     // !TODO
     // Set up the response receiver by filtering data from the ROS node by the ID generated.
     final actionId = ros.requestActionCaller(name);
 
     // TODO deal with callbacks
-    final receiver = ros.stream.where((message) => message['id'] == actionId).map(
-        (Map<String, dynamic> message) => message['result'] == null
-            ? Future.error(message['values']!)
-            : Future.value(message['values']));
+    final receiver = ros.stream.where((message) => message['id'] == actionId && message['op'] == 'action_result');
+
     // Wait for the receiver to receive a single response and then return.
-    final completer = Completer<String>();
+    final completer = Completer<bool>();
 
     // TODO 
-    listener = receiver.listen((d) {
-      completer.complete(actionId);
+    listener = receiver.listen((message) {
+      if (!completer.isCompleted) {
+      completer.complete(true);
+    print("Goal completed?");
+}
       listener!.cancel();
     });
 
@@ -70,7 +72,7 @@ class Action {
       args: goal,
     ));
     
-    return actionId;
+    return (actionId, completer.future);
   }
   void cancelGoal(String actionId) {
 
