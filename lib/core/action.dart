@@ -8,7 +8,7 @@ import 'request.dart';
 // Receiver function to handle requests when the service is advertising.
 typedef ActionHandler = Future<Map<String, dynamic>>? Function(
     Map<String, dynamic> args);
-  
+
 /// Wrapper to interact with ROS services.
 class Action {
   Action({
@@ -35,31 +35,55 @@ class Action {
   bool get isAdvertised => _advertiser != null;
 
   StreamSubscription? listener;
-
+  StreamSubscription? connection_listener;
 
   /// Call the service with a request ([req]).
   (String, Future<bool>?) sendGoal(dynamic goal) {
-
     // The action can't be called if it's currently advertising.
-    if (isAdvertised) return ("",null);
+    if (isAdvertised) return ("", null);
 
     // !TODO
-    // Set up the response receiver by filtering data from the ROS node by the ID generated.
+    // Set up the response receiver by filtering data from the ROS node by
+    // the ID generated.
     final actionId = ros.requestActionCaller(name);
 
-    // TODO deal with callbacks
-    final receiver = ros.stream.where((message) => message['id'] == actionId && message['op'] == 'action_result');
+    // deal with callbacks
+    final receiver = ros.stream.where((message) =>
+        message['id'] == actionId && message['op'] == 'action_result');
 
-    // Wait for the receiver to receive a single response and then return.
+    // Create a completer that gets completed when the action finishes, or the ros
+    // connection dies.
     final completer = Completer<bool>();
 
-    // TODO 
+    connection_listener = ros.statusStream.listen((status) {
+      switch (status) {
+        case Status.closed:
+        case Status.errored:
+          print("Connection closed or error");
+          if (!completer.isCompleted) {
+            completer.complete(false);
+          }
+          if (connection_listener != null) {
+            connection_listener!.cancel();
+          }
+          if (listener != null) {
+            listener!.cancel();
+          }
+        default:
+      }
+    });
+
     listener = receiver.listen((message) {
       if (!completer.isCompleted) {
-      completer.complete(true);
-    print("Goal completed?");
-}
-      listener!.cancel();
+        completer.complete(true);
+        print("Goal completed");
+      }
+      if (connection_listener != null) {
+        connection_listener!.cancel();
+      }
+      if (listener != null) {
+        listener!.cancel();
+      }
     });
 
     // TODO deal with feedback
@@ -71,11 +95,11 @@ class Action {
       action_type: type,
       args: goal,
     ));
-    
+
     return (actionId, completer.future);
   }
-  void cancelGoal(String actionId) {
 
+  void cancelGoal(String actionId) {
     ros.send(Request(
       op: 'cancel_action_goal',
       id: actionId,
@@ -83,7 +107,7 @@ class Action {
     ));
   }
 
-  // TODO 
+  // TODO
   // Advertise the service and provide a [handler] to deal with requests.
   Future<void> advertise(ActionHandler handler) async {
     if (isAdvertised) return;
